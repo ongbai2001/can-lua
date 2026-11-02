@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sổ Cân Lúa</string>
+    <string name="title_activity_main">Sổ Cân Lúa</string>
+    <string name="package_name">vn.phu.socanlua</string>
+    <string name="custom_url_scheme">vn.phu.socanlua</string>
+</resources>

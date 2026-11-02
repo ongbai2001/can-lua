@@ -1,0 +1,9 @@
+{
+	"appId": "vn.phu.socanlua",
+	"appName": "Sổ Cân Lúa",
+	"webDir": "www",
+	"backgroundColor": "#14496b",
+	"android": {
+		"allowMixedContent": false
+	}
+}
