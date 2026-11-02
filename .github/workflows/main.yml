@@ -1,0 +1,76 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: can-lua-android
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: can-lua-android/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Cai Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Gan so ban build
+        run: |
+          sed -i "s#__BUILD__#${{ github.run_number }}#; s#__REPO__#${{ github.repository }}#" www/index.html
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          grep -n "versionCode\|versionName" android/app/build.gradle
+
+      - name: Cai thu vien va dong bo giao dien vao app
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Dung khoa ky co dinh
+        run: |
+          mkdir -p ~/.android
+          cp keystore/debug.keystore ~/.android/debug.keystore
+
+      - name: Build APK
+        working-directory: can-lua-android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Dat ten file APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk SoCanLua.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoCanLua-apk
+          path: can-lua-android/SoCanLua.apk
+
+      - name: Dang ban moi nhat len Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest SoCanLua.apk \
+            --title "So Can Lua 1.0.${{ github.run_number }}" \
+            --notes $'build: ${{ github.run_number }}\nTai file SoCanLua.apk ve dien thoai Android va cai dat.' \
+            --target "${{ github.sha }}"
